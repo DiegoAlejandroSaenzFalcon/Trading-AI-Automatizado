@@ -1,0 +1,20 @@
+# Proyectos/entornos ajenos
+soluciona/
+__pycache__/
+*.pyc
+
+# Config local / secretos (defensa en profundidad)
+*.env
+.env.local
+config.local.json
+credentials*
+*.token
+
+# Logs y temporales
+*.log
+tmp/
+*.tmp
+
+# Windows
+Thumbs.db
+Desktop.ini

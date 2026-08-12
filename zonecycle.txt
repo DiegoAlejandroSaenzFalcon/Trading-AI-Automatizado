@@ -1,0 +1,25 @@
+﻿===== void ManageZoneLifecycle( (linea 1112) =====
+void ManageZoneLifecycle()
+  {
+   double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+   double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   double atr = g_bufATR[0];
+   if(atr <= 0) return;
+
+   for(int i = ArraySize(zones)-1; i >= 0; i--)
+     {
+      if(!zones[i].active) continue;
+
+      if(TimeCurrent() - zones[i].time > PeriodSeconds(InpFVGTimeframe) * InpMaxZoneAgeBars)
+        {
+         ExpireZone(i);
+         continue;
+        }
+
+      if(zones[i].type == 1 && bid < zones[i].bottom - atr*InpZoneInvalidateATR)
+         ExpireZone(i);
+      else
+        if(zones[i].type == -1 && ask > zones[i].top + atr*InpZoneInvalidateATR)
+           ExpireZone(i);
+     }
+  }

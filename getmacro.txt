@@ -1,0 +1,6 @@
+﻿double GetMacroFilterValue()
+{
+    return (InpMacroMode == MACRO_MODE_TEMA) ? g_macroTEMA : g_macroEMA;
+}
+
+double ComputeBiasProbability(double mid, double atr)

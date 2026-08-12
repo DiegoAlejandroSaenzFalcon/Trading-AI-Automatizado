@@ -1,0 +1,78 @@
+﻿void ComputeAdaptiveSLTP(double atr, double &slDist, double &tpDist)
+  {
+   double baseSL = atr * InpSLMultiplier;
+   double baseTP = atr * InpTPMultiplier;
+
+   double spreadFloor = MathMax(0.0, g_avgSpread) * MathMax(0.0, InpSLSpreadBufferMult);
+   slDist = MathMax(baseSL, spreadFloor);
+   tpDist = baseTP;
+
+   if(g_avgSpread > 1e-12)
+     {
+      double curSpread = SymbolInfoDouble(_Symbol, SYMBOL_ASK) - SymbolInfoDouble(_Symbol, SYMBOL_BID);
+      double ratio = curSpread / g_avgSpread;
+      if(ratio > InpSpreadSpikeThreshold)
+        {
+         double widenFactor = MathMin(InpMaxSLSpreadExpansion, ratio / InpSpreadSpikeThreshold);
+         slDist *= widenFactor;
+         tpDist *= widenFactor;
+        }
+     }
+  }
+double NormalizeVolumeForRisk(double vol)
+  {
+   double brokerMin = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+   double brokerMax = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
+   double stepVol   = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+   if(stepVol <= 0.0) stepVol = (brokerMin > 0.0) ? brokerMin : 0.01;
+
+   double steps      = MathFloor(vol / stepVol + 1e-8);
+   double normalized = steps * stepVol;
+
+   double lo = brokerMin;
+   double hi = MathMin(brokerMax, InpMaxLotSize);
+   if(normalized < lo) normalized = lo;
+   if(normalized > hi) normalized = hi;
+
+   int stepDigits = 2;
+   if(stepVol >= 0.09999) stepDigits = 1;
+   if(stepVol >= 0.9999)  stepDigits = 0;
+   return NormalizeDouble(normalized, stepDigits);
+  }
+double CalcLotSizeForRisk(double slDistance)
+  {
+   double tickValue = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
+   double tickSize  = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
+   if(tickSize <= 0.0 || tickValue <= 0.0 || slDistance <= 0.0)
+      return NormalizeVolumeForRisk(SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN));
+
+   //--- riesgo en unidades de cuenta (el tick value ya viene en unidades de
+   //    cuenta, asi que el calculo es directo y sirve para Cent y Standard)
+   double riskAcct = InpRiskPerTradeUSD / g_acctUnit;
+   double moneyPerPriceUnit = tickValue / tickSize;
+   double lots = riskAcct / (slDistance * moneyPerPriceUnit);
+   return NormalizeVolumeForRisk(lots);
+  }
+double GetTradeLotSize(double slDistance)
+  {
+   if(InpLotMode == LOT_MODE_FIXED)
+      return NormalizeVolumeForRisk(InpFixedLotSize);
+
+   return CalcLotSizeForRisk(slDistance);
+  }
+//===================================================================
+//  Filtros de confluencia y regimen
+//===================================================================
+bool NearActiveZone(int dir, double price)
+  {
+   if(!InpRequireZoneProximity) return true;
+   double atr = g_bufATR[0];
+   if(atr <= 0) return false;
+   double tol = atr * InpZoneToleranceATR;
+
+   for(int i = 0; i < ArraySize(zones); i++)
+     {
+      if(!zones[i].active || zones[i].type != dir) continue;
+      if(price >= zones[i].bottom - tol && price <= zones[i].top + tol)
+         return true;
+     }

@@ -1,0 +1,8 @@
+﻿===== bool IsBullishEngulfing( (linea 962) =====
+bool IsBullishEngulfing(const MqlRates &r[], int i)
+  {
+   bool prevBear = r[i+1].close < r[i+1].open;
+   bool currBull = r[i].close > r[i].open;
+   bool engulf   = r[i].open <= r[i+1].close && r[i].close >= r[i+1].open;
+   return(prevBear && currBull && engulf);
+  }

@@ -1,0 +1,39 @@
+; Pure_Fractal_MultiTimeframe_XAUUSD_r31 - Config BTC validada 3 periodos (2024H2-2026A)
+; PF 1.25 total 25m | 88 trades/mes | 4 slots | riesgo 300 USD
+; Cargar en grafico BTCUSDm
+InpAccountType=0
+InpLotMode=0
+InpFixedLotSize=0.01
+InpRiskPerTradeUSD=300.0
+InpMaxLotSize=4.0
+InpSLMultiplierATR=80
+InpMaxSpreadATR=0.50
+InpDailyLossLimitEnable=false
+InpMaxDailyLossUSD=1200.0
+InpCooldownMinutes=0
+InpSlot01Strategy=7
+InpSlot01Start=4
+InpSlot01End=6
+InpSlot01TP=2.5
+InpSlot01TTL=48
+InpSlot02Strategy=5
+InpSlot02Start=16
+InpSlot02End=18
+InpSlot02TP=2.0
+InpSlot02TTL=48
+InpSlot03Strategy=7
+InpSlot03Start=18
+InpSlot03End=20
+InpSlot03TP=2.0
+InpSlot03TTL=24
+InpSlot04Strategy=5
+InpSlot04Start=20
+InpSlot04End=22
+InpSlot04TP=2.5
+InpSlot04TTL=48
+InpSlot05Strategy=0
+InpSlot06Strategy=0
+InpSlot07Strategy=0
+InpSlot08Strategy=0
+InpPersistState=true
+InpMagicBase=910001

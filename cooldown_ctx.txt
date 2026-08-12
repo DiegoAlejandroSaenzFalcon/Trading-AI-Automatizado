@@ -1,0 +1,36 @@
+﻿    if(trans.type != TRADE_TRANSACTION_DEAL_ADD) return;
+
+    ulong dealTicket = trans.deal;
+    if(!HistoryDealSelect(dealTicket)) return;
+
+    long dealMagic = HistoryDealGetInteger(dealTicket, DEAL_MAGIC);
+    if(dealMagic != g_magic) return;
+
+    long dealEntry = HistoryDealGetInteger(dealTicket, DEAL_ENTRY);
+    if(dealEntry != DEAL_ENTRY_OUT && dealEntry != DEAL_ENTRY_OUT_BY) return;
+
+    double dealResult = HistoryDealGetDouble(dealTicket, DEAL_PROFIT)
+                       + HistoryDealGetDouble(dealTicket, DEAL_SWAP)
+                       + HistoryDealGetDouble(dealTicket, DEAL_COMMISSION);
+
+    if(dealResult < 0.0 && InpCooldownMinutes > 0)
+    {
+        g_cooldownUntil = TimeTradeServer() + InpCooldownMinutes * 60;
+        if(InpPersistState)
+            GlobalVariableSet(GV_Cooldown(), (double)g_cooldownUntil);
+        PrintFormat("[FVG_FUSION] Anti-Revenge Cooldown activo hasta %s (perdida: %.2f)",
+                    TimeToString(g_cooldownUntil, TIME_DATE | TIME_MINUTES), dealResult);
+    }
+
+    CheckDayRollover();
+    g_dayRealizedPL += dealResult;
+    if(InpDailyLossLimitEnable && !g_dailyLimitHit && g_dayRealizedPL <= -MathAbs(InpMaxDailyLossUSD)/g_acctUnit)
+    {
+        g_dailyLimitHit = true;
+        PrintFormat("[FVG_FUSION] CIRCUIT BREAKER DIARIO activado: perdida del dia=%.2f USD (limite %.2f). Entradas bloqueadas hasta el proximo dia.",
+                    g_dayRealizedPL * g_acctUnit, InpMaxDailyLossUSD);
+    }
+    if(InpPersistState)
+        GlobalVariableSet(GV_DayPL(), g_dayRealizedPL);
+}
+//===================================================================

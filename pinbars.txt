@@ -1,0 +1,10 @@
+﻿===== bool IsBullishPinBar( (linea 976) =====
+bool IsBullishPinBar(const MqlRates &r[], int i)
+  {
+   double range = r[i].high - r[i].low;
+   if(range <= 0) return(false);
+   double body      = MathAbs(r[i].close - r[i].open);
+   double lowerWick = MathMin(r[i].open, r[i].close) - r[i].low;
+   double upperWick = r[i].high - MathMax(r[i].open, r[i].close);
+   return(body <= range*0.35 && lowerWick >= range*0.55 && upperWick <= range*0.20);
+  }

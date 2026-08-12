@@ -1,0 +1,15 @@
+﻿===== double CalcLotSizeForRisk( (linea 1594) =====
+double CalcLotSizeForRisk(double slDistance)
+  {
+   double tickValue = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
+   double tickSize  = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
+   if(tickSize <= 0.0 || tickValue <= 0.0 || slDistance <= 0.0)
+      return NormalizeVolumeForRisk(SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN));
+
+   //--- riesgo en unidades de cuenta (el tick value ya viene en unidades de
+   //    cuenta, asi que el calculo es directo y sirve para Cent y Standard)
+   double riskAcct = InpRiskPerTradeUSD / g_acctUnit;
+   double moneyPerPriceUnit = tickValue / tickSize;
+   double lots = riskAcct / (slDistance * moneyPerPriceUnit);
+   return NormalizeVolumeForRisk(lots);
+  }
