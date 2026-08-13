@@ -1,45 +1,26 @@
-const fs = require('fs');
-const path = require('path');
 const { config, fechaDia, hoyInicio, normalizar, escaparRegex } = require('../config');
 const { enviarPedido } = require('./integracion');
-
-const DATA_DIR = config.dataDir;
-const PEDIDOS_FILE = path.join(DATA_DIR, 'pedidos.jsonl');
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-
-let idSiguiente = leerPedidos().length + 1;
+const db = require('./db');
 
 function leerPedidos() {
-  if (!fs.existsSync(PEDIDOS_FILE)) return [];
-  return fs.readFileSync(PEDIDOS_FILE, 'utf8')
-    .split('\n')
-    .filter(l => l.trim())
-    .map(l => { try { return JSON.parse(l); } catch { return null; } })
-    .filter(Boolean);
+  return db.leerPedidos();
 }
 
 function guardarPedido(datos) {
-  fs.appendFileSync(PEDIDOS_FILE, JSON.stringify(datos) + '\n', 'utf8');
+  db.guardarPedido(datos);
   enviarPedido(datos).catch(e => console.error('[!] Error en integración POS:', e && e.message ? e.message : e));
 }
 
 function patchPedido(id, campos) {
-  const lineas = fs.readFileSync(PEDIDOS_FILE, 'utf8').split('\n').filter(l => l.trim());
-  const nuevas = lineas.map(l => {
-    const o = JSON.parse(l);
-    if (o.id === id) Object.assign(o, campos);
-    return JSON.stringify(o);
-  });
-  fs.writeFileSync(PEDIDOS_FILE, nuevas.join('\n') + '\n', 'utf8');
+  return db.patchPedido(id, campos);
 }
 
 function cambiarEstado(id, estado) {
-  patchPedido(id, { estado });
-  return leerPedidos().find(p => p.id === id) || null;
+  return db.cambiarEstado(id, estado);
 }
 
 function siguienteId() {
-  return idSiguiente++;
+  return db.siguienteId();
 }
 
 function parsearPedido(mensaje) {

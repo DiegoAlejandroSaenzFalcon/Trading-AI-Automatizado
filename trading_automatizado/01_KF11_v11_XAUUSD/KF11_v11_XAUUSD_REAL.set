@@ -1,0 +1,125 @@
+;=== Tipo de Cuenta (Cent/Standard/Micro Auto) ===
+InpAccountType=0
+InpMacroTimeframe=0
+
+; === Motor Kalman: Filtro y Sigmoide ===
+InpATRPeriod=14
+InpKalmanQ11=0.0001
+InpKalmanQ22=0.01
+InpKalmanR=0.001
+InpKalmanDtFallback=0.1
+InpKalmanMinDt=0.001
+InpDtSmoothingAlpha=0.20
+InpMaxAccelHatAbs=3.0
+InpVelocitySens=50.0
+InpDisplacementW=3.0
+InpAccelerationW=10.0
+InpBiasThreshold=0.6
+InpSignalMode=1
+
+;=== Entradas: Confirmacion de Vela y Cadencia ===
+InpBarConfirmEntry=true
+InpMinBarsBetweenEntries=1
+
+; === Filtro de Tendencia Macro (EMA/TEMA) ===
+InpMacroBiasEnable=true
+InpMacroPeriod=200
+InpMacroMode=0
+InpMacroPenaltyGamma=0.7
+
+; === Ruido Adaptativo (AKF) ===
+InpAKF_Enable=true
+InpAKF_Window=30
+InpAKF_Alpha=50.0
+InpAKFMode=1
+
+; === Zonas FVG + Confluencia de Accion del Precio ===
+InpFVGTimeframe=16385
+InpMinGapATR=0.15
+InpMaxZoneAgeBars=60
+InpMaxActiveZones=8
+InpZoneInvalidateATR=0.5
+InpZoneToleranceATR=0.3
+InpLookbackBars=20
+InpConfluenceBoost=0.15
+InpRequireZoneProximity=false
+InpRegimeFilterEnable=false
+InpRegimeATRMult=0.80
+InpRegimeATRWindow=100
+
+; === Riesgo Adaptativo: SL/TP conscientes del Spread ===
+InpSLSpreadBufferMult=1.5
+InpSpreadSpikeThreshold=1.8
+InpMaxSLSpreadExpansion=2.0
+
+; === Riesgo y Tamano de Posicion (USD reales) ===
+; NOTA REAL: pasar de lote fijo 1.0/max 10 a riesgo fijo. Ajustar RiskPerTradeUSD
+; segun tu cuenta: 0.5-1% del equity (p.ej. equity 2000 -> 10-20 USD).
+InpLotMode=0
+InpFixedLotSize=0.01
+InpRiskPerTradeUSD=10.0
+InpMaxLotSize=1.0
+InpSLMultiplier=2.0
+InpTPMultiplier=4.0
+InpMaxOpenPositions=1
+
+; === Filtro de Spread ===
+InpMaxSpreadATR=0.15
+
+; === Salida: Parciales, Breakeven y Trailing Progresivo ===
+InpPartialTPEnable=false
+InpPartialFactor=0.50
+InpPartialTriggerATR=1.5
+InpBreakevenTriggerATR=0.5
+InpBreakevenLockATR=0.1
+InpTrailBaseATR=0.4
+InpTrailTightenRate=0.35
+InpTrailMinATR=0.1
+InpTrailSpreadFloorMult=1.5
+
+; === Controles Macro: Circuit Breaker Diario y Time-Stop por Volatilidad ===
+InpDailyLossLimitEnable=true
+InpMaxDailyLossUSD=50.0
+InpVolTimeStopEnable=true
+InpVolCollapseRatio=0.50
+InpVolTimeStopMinBars=6
+InpVolTimeStopBarTF=0
+
+; === Pausa Tras Perdida ===
+InpCooldownMinutes=2
+
+; === Filtro de Sesion (OFF por defecto para REAL) ===
+; Las ganadoras live de KF11 XAU fueron ~20:00-23:00 (hora local de la maquina).
+; Verifica la franja en tu terminal y ajusta InpStartHour/InpEndHour (hora SERVIDOR)
+; antes de activarlo (p.ej. en Exness Trial suele ser UTC+3).
+InpSessionFilterEnable=false
+InpStartHour=18
+InpStartMinute=0
+InpEndHour=24
+InpEndMinute=0
+
+; === Persistencia de Estado (GlobalVariables) ===
+InpPersistState=true
+
+; === Visualizacion: Zonas, Estructura y Panel ===
+InpColorTP=8421376
+InpColorSL=3937500
+InpColorBullFVG=16748574
+InpColorBearFVG=42495
+InpColorLevels=11119017
+InpColorBuyArrow=65280
+InpColorSellArrow=255
+InpColorKalmanLine=65535
+InpColorStructure=6908265
+InpShowKalmanLine=true
+InpShowStructure=true
+InpShowAllPatterns=true
+InpShowMacroTrendLine=true
+InpShowDashboard=true
+InpBoxExtendBars=5
+InpZoneExtendBars=20
+InpShowLabels=true
+
+;=== MAGIC UNICO VERSION (asignado) ===
+InpMagicBase=104
+
