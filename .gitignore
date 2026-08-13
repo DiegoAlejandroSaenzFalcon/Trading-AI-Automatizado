@@ -18,3 +18,13 @@ tmp/
 # Windows
 Thumbs.db
 Desktop.ini
+
+# Node / WhatsApp bot
+node_modules/
+.wwebjs_auth/
+.wwebjs_cache/
+pedidos-whatsapp/backup-*/
+
+# Temporales de análisis del agente
+_tmp_*.py
+summarize.ps1

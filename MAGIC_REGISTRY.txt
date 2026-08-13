@@ -1,0 +1,63 @@
+REGISTRO DE IDENTIDAD DE VERSIONES (MAGIC / COMENTARIO / GLOBALVARIABLES)
+Actualizado: 12/08/2026
+Regla innegociable: cada version tiene MAGIC base UNICO, NOTA de orden UNICA y
+GlobalVariables UNICAS + con simbolo. Varias versiones corren en el MISMO simbolo
+(demo). Cambiar el magic de un EA deja huerfanas sus posiciones abiertas.
+
+=== TABLA UNICA ==-
+
+------------------- FAMILIA FVG FUSION (Kalman+FVG) -------------------
+1) Pure_Fractal_FVG_Fusion_v11.0.mq5
+   InpMagicBase=104     comentario "KF11 Buy/Sell/KF11+FVG*"   GV PFVG11_<SYM>_<MAGIC>_*
+2) Pure_Fractal_FVG_Fusion_BTCUSD_v12.0.mq5
+   InpMagicBase=12      comentario "KF12 ..."                   GV PFVG12_<SYM>_<MAGIC>_*
+3) Pure_Fractal_FVG_Fusion_BTCUSD_r30.mq5
+   InpMagicBase=30      comentario "R30B ..."                   GV PFVG30B_<SYM>_<MAGIC>_*
+4) Pure_Fractal_FVG_Fusion_XAUUSD_r30.mq5
+   InpMagicBase=31      comentario "R30X ..."                   GV PFVG30X_<SYM>_<MAGIC>_*
+   (corregido: era 30 = colision con r30B; ahora 31 = unico)
+
+------------------------ FAMILIA MULTITIEMPO (8 slots) ------------------------
+5) Pure_Fractal_MultiTimeframe_XAUUSD_r31.mq5          (XAU)
+   InpMagicBase=910001  comentario "M31X_S1..8"           GV M31X_<SYM>_DAYSTART/DAYPL/COOLDOWN
+6) Pure_Fractal_MultiTimeframe_XAUUSD_r31_BTC.mq5       (BTC)
+   InpMagicBase=910101  comentario "M31B_S1..8"           GV M31B_<SYM>_DAYSTART/DAYPL/COOLDOWN
+7) Pure_Fractal_MultiTimeframe_XAUUSD_r31_BTC_2.mq5     (BTC variante 2)
+   InpMagicBase=910201  comentario "M31C_S1..8"           GV M31C_<SYM>_DAYSTART/DAYPL/COOLDOWN
+   (corregido: r31 compartia magic 910001 y GV M31_* sin simbolo entre los 3 archivos)
+
+8) Pure_Fractal_MultiTimeframe_XAUUSD_r32_BTC.mq5
+   InpMagicBase=914001  comentario "M32B_S1..8"           GV M32B_<SYM>_DAYSTART/DAYPL/COOLDOWN
+9) Pure_Fractal_MultiTimeframe_XAUUSD_r32_XAU.mq5
+   InpMagicBase=915001  comentario "M32X_S1..8"           GV M32X_<SYM>_DAYSTART/DAYPL/COOLDOWN
+
+=== CAMBIOS INCORPORADOS (esta sesion, 6+2 archivos, 0 errores) ===
+A) GV de persistenia r31/r32 ahora llevan _Symbol y prefijo unico de version
+   (antes "M31_DAYPL" era compartida sin simbolo -> el breaker diario de una
+   version contaminaba a la otra en el mismo simbolo).
+B) OnTradeTransaction ahora verifica DEAL_SYMBOL == _Symbol ademas del magic,
+   para no contar cierres de otra instancia/version.
+C) OnInit de r32 valida segun el modo activo: %equity -> InpRiskPctEquity e
+   InpMaxDailyLossPct; USD fijo -> InpRiskPerTradeUSD e InpMaxDailyLossUSD.
+D) r30X magic 30 -> 31 (colision con r30B).
+
+=== DEUDA (plan de arquitectura del agente Software Architect) ===
+- Factores comunes (FVG y MultiTimeframe) en .mqh (Include\NeurAlgo\): Identity.mqh,
+  Risk.mqh, Strategies.mqh + core por familia. Cada .mq5 del manifiesto queda
+  delgado (15 lineas) definiendo VER_MAGIC, VER_TAG, risk -> nunca mas se edita
+  el motor ni se olvida el magic.
+- Comentario/order y GV derivados SOLO del manifiesto (un unico lugar).
+- Tarea de rediseno en cola: prioridad alta, aplica cuando se congele el set XAU.
+
+=== .set listos y asignables (carpeta Default Project) ===
+MAGIC_Pure_Fractal_FVG_Fusion_v11.0.set           (InpMagicBase=104)
+MAGIC_Pure_Fractal_FVG_Fusion_BTCUSD_v12.0.set    (InpMagicBase=12)
+MAGIC_Pure_Fractal_FVG_Fusion_XAUUSD_r30.set      (InpMagicBase=31)
+MAGIC_Pure_Fractal_MultiTimeframe_XAUUSD_r31_BTC.set (910001)
+MAGIC_Pure_Fractal_MultiTimeframe_XAUUSD_r31_XAU.set (910001 -> al cargar en r31 XAU usa su default 910001)
+MAGIC_Pure_Fractal_MultiTimeframe_XAUUSD_r32_BTC.set (914001 + slots validados)
+MAGIC_Pure_Fractal_MultiTimeframe_XAUUSD_r32_XAU.set (915001 + slots validados)
+
+=== NOTA Auditoria (Code Reviewer): no dejar montados juntos ===
+- "new 2.mq5" todavia usa comentario "KF11 ..." (resto viejo). Archivar o renombrar
+  antes de montarlo junto a v11.0 en el mismo simbolo.

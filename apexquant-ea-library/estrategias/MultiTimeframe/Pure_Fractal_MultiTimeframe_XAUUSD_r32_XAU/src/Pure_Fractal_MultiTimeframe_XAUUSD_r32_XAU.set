@@ -1,0 +1,55 @@
+;=== MAGIC UNICO VERSION (asignado) ===
+InpMagicBase=915001
+
+;=== Riesgo y Tamano [r32] ===
+InpLotMode=0
+InpUseRiskPctEquity=true
+InpRiskPctEquity=1.2
+InpMaxLotSize=2.0
+
+;=== Circuit Breaker Diario [r32] ===
+InpDailyLossLimitEnable=true
+InpMaxDailyLossPct=4.0
+
+;=== Set rentable de 7 slots (EMACROSS 14-16h OFF) ===
+InpSlot01Strategy=3
+InpSlot01Start=0
+InpSlot01End=2
+InpSlot01TP=3.0
+InpSlot01TTL=48
+InpSlot02Strategy=3
+InpSlot02Start=2
+InpSlot02End=4
+InpSlot02TP=2.0
+InpSlot02TTL=48
+InpSlot03Strategy=1
+InpSlot03AltEnable=true
+InpSlot03Start=4
+InpSlot03End=6
+InpSlot03TP=3.0
+InpSlot03TTL=24
+InpSlot04Strategy=1
+InpSlot04Start=6
+InpSlot04End=8
+InpSlot04TP=3.0
+InpSlot04TTL=48
+InpSlot05Strategy=5
+InpSlot05Start=10
+InpSlot05End=12
+InpSlot05TP=3.0
+InpSlot05TTL=48
+InpSlot06Strategy=0
+InpSlot06Start=14
+InpSlot06End=16
+InpSlot06TP=2.0
+InpSlot06TTL=48
+InpSlot07Strategy=5
+InpSlot07Start=16
+InpSlot07End=18
+InpSlot07TP=2.0
+InpSlot07TTL=48
+InpSlot08Strategy=1
+InpSlot08Start=22
+InpSlot08End=24
+InpSlot08TP=3.0
+InpSlot08TTL=48

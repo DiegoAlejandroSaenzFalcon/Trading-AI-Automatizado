@@ -1,0 +1,25 @@
+# Dependencias
+node_modules/
+
+# Datos de clientes (pedidos, conversaciones, GPS, teléfonos) — PRIVADO / PII
+data/
+
+# Sesiones de WhatsApp (auth_state) — PRIVADO
+auth_info/
+auth_info_*/
+
+# Configuraciones reales con claves API y datos del negocio — PRIVADO
+config.json
+clientes/
+
+# Claves sueltas
+.llm_key
+.env
+*.local
+
+# Backups internos
+backup-*/
+*.log
+
+# Archivos de prueba generados
+*.jsonl

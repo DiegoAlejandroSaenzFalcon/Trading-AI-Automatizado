@@ -1,0 +1,38 @@
+;=== MAGIC UNICO VERSION (asignado) ===
+InpMagicBase=914001
+
+;=== Riesgo y Tamano [r32] ===
+InpLotMode=0
+InpUseRiskPctEquity=true
+InpRiskPctEquity=1.5
+InpMaxLotSize=4.0
+
+;=== Circuit Breaker Diario [r32] ===
+InpDailyLossLimitEnable=true
+InpMaxDailyLossPct=6.0
+
+;=== Maxima rentabilidad validada: 4 slots WF ===
+InpSlot01Strategy=0
+InpSlot02Strategy=5
+InpSlot02Start=16
+InpSlot02End=18
+InpSlot02TP=2.0
+InpSlot02TTL=24
+InpSlot03Strategy=7
+InpSlot03Start=18
+InpSlot03End=20
+InpSlot03TP=2.0
+InpSlot03TTL=24
+InpSlot04Strategy=7
+InpSlot04Start=4
+InpSlot04End=6
+InpSlot04TP=2.5
+InpSlot04TTL=24
+InpSlot05Strategy=5
+InpSlot05Start=20
+InpSlot05End=22
+InpSlot05TP=2.5
+InpSlot05TTL=24
+InpSlot06Strategy=0
+InpSlot07Strategy=0
+InpSlot08Strategy=0

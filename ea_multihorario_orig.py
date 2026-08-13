@@ -19,14 +19,6 @@ def wilder_atr(h, n=14):
     out[len(tr):] = out[len(tr)-1]
     return out
 
-def sma_atr(h, n=14):
-    pc = np.concatenate([[h["close"][0]], h["close"][:-1]])
-    tr = np.maximum(h["high"]-h["low"], np.maximum(np.abs(h["high"]-pc), np.abs(h["low"]-pc)))
-    cs = np.cumsum(tr)
-    out = np.full(len(h), np.nan)
-    out[n-1:] = (cs[n-1:] - np.concatenate([[0.0], cs[:-n]])) / n
-    return out
-
 def ema_arr(v, n):
     a = np.empty(len(v)); a[0] = v[0]
     k = 2.0/(n+1)
@@ -45,24 +37,6 @@ def vwap_day(time, typical):
         if day != day0:
             start = i; day0 = day
         out[i] = (cs[i] - (cs[start-1] if start > 0 else 0.0)) / (i - start + 1)
-    return out
-
-def vwap_open_day(time, opn, pre_sum=0.0, pre_count=0):
-    n = len(time)
-    cs = np.cumsum(opn)
-    out = np.full(n, np.nan)
-    day0 = time[0] - time[0] % 86400
-    start = 0
-    for i in range(n):
-        day = time[i] - time[i] % 86400
-        if day != day0:
-            start = i; day0 = day
-        if i < start:
-            continue
-        if start == 0 and pre_count > 0:
-            out[i] = (cs[i] + pre_sum) / (i + 1 + pre_count)
-        else:
-            out[i] = (cs[i] - (cs[start-1] if start > 0 else 0.0)) / (i - start + 1)
     return out
 
 def signal(d, i, strat, atr, ema20, ema30, ema60, vw):
@@ -85,55 +59,44 @@ def signal(d, i, strat, atr, ema20, ema30, ema60, vw):
         if highs[i] >= mx and closes[i] < mx - 0.1*atr[i]: return -1
         if lows[i] <= mn and closes[i] > mn + 0.1*atr[i]: return 1
     elif strat == "VWAP":
-        if i < 2 or np.isnan(vw[i-1]) or np.isnan(vw[i-2]): return 0
-        if closes[i] > vw[i-1] and closes[i-1] <= vw[i-2]: return 1
-        if closes[i] < vw[i-1] and closes[i-1] >= vw[i-2]: return -1
+        if np.isnan(vw[i]) or np.isnan(vw[i-1]): return 0
+        if closes[i] > vw[i] and closes[i-1] <= vw[i-1]: return 1
+        if closes[i] < vw[i] and closes[i-1] >= vw[i-1]: return -1
     return 0
 
 SCHEDULE_XAU = [(4, 6, "BREAK48"), (16, 18, "EMACROSS"), (22, 24, "BREAK48")]
 SCHEDULE_BTC = [(16, 18, "RETEST48"), (18, 20, "VWAP")]
 
-def run_multi(sym, frm, to, schedule, spread=0.0, vwap_pre=(0.0, 0)):
+def run_multi(sym, frm, to, schedule):
     d = load(sym, frm, to)
     n = len(d)
-    if vwap_pre is None:
-        pre = load(sym, frm - dtm.timedelta(days=2), frm)
-        w = 47
-        vwap_pre = (float(pre["open"][-w:].sum()), w)
-    atr = sma_atr(d)
+    atr = wilder_atr(d)
     ema20 = ema_arr(d["close"], 20); ema30 = ema_arr(d["close"], 30); ema60 = ema_arr(d["close"], 60)
-    vw = vwap_open_day(d["time"], d["open"], *vwap_pre)
+    vw = vwap_day(d["time"], (d["high"]+d["low"]+d["close"])/3.0)
     trades = []
-    poss = [None] * len(schedule)
+    pos = None
     for i in range(80, n):
         hour = (d["time"][i] % 86400) // 3600
-        for si, (h1_, h2_, st) in enumerate(schedule):
-            pos = poss[si]
-            closed = False
-            if pos is not None:
-                dd_, entry, sl, tp_l, ttl = pos
-                if dd_ == 1:
-                    if d["low"][i] <= sl: trades.append(-1.0); poss[si] = None; closed = True
-                    elif d["high"][i] >= tp_l: trades.append(2.0); poss[si] = None; closed = True
-                else:
-                    if d["high"][i] >= sl: trades.append(-1.0); poss[si] = None; closed = True
-                    elif d["low"][i] <= tp_l: trades.append(2.0); poss[si] = None; closed = True
-                if not closed and i >= ttl: trades.append(0.0); poss[si] = None; closed = True
-            if closed:
-                pos = None
-            if not (h1_ <= ((d["time"][i+1] % 86400) // 3600 if i + 1 < n else -1) < h2_): continue
-            at = atr[i]
-            if at <= 0: continue
-            sig = signal(d, i, st, atr, ema20, ema30, ema60, vw)
-            if sig != 0 and poss[si] is None and i + 1 < n:
-                sl_d = 0.8*at; tp_d = 2.0*sl_d
-                # modelo fiel al EA: SL/TP fijados desde el CLOSE de la vela señal,
-                # entrada ejecutada al open de la vela siguiente con spread completo
-                close_ref = d["close"][i]
-                sl = close_ref - sig*sl_d
-                tp = close_ref + sig*tp_d
-                entry = d["open"][i+1] + (spread if sig == 1 else -spread)
-                poss[si] = (sig, entry, sl, tp, i+1+24)
+        strat_now = None
+        for h1_, h2_, st in schedule:
+            if h1_ <= hour < h2_:
+                strat_now = st; break
+        at = atr[i]
+        if pos is not None:
+            dd_, e, sl, tp_l, ttl = pos
+            if dd_ == 1:
+                if d["low"][i] <= sl: trades.append(-1.0); pos = None; continue
+                if d["high"][i] >= tp_l: trades.append(2.0); pos = None; continue
+            else:
+                if d["high"][i] >= sl: trades.append(-1.0); pos = None; continue
+                if d["low"][i] <= tp_l: trades.append(2.0); pos = None; continue
+            if i >= ttl: trades.append(0.0); pos = None
+            continue
+        if strat_now is None or at <= 0: continue
+        sig = signal(d, i, strat_now, atr, ema20, ema30, ema60, vw)
+        if sig != 0:
+            sl_d = 0.8*at; tp_d = 2.0*sl_d
+            pos = (sig, d["close"][i], d["close"][i]-sig*sl_d, d["close"][i]+sig*tp_d, i+24)
     return trades
 
 PERIODS = [
@@ -141,11 +104,11 @@ PERIODS = [
     ("P2_25h2-26e", dtm.datetime(2025,7,1), dtm.datetime(2026,1,31)),
     ("P3_26f-26a", dtm.datetime(2026,2,1), dtm.datetime(2026,8,11)),
 ]
-def report(label, sym, schedule, risk, periods, spread):
-    print(f"=== {label}  (spread ${spread:.2f}) ===")
+def report(label, sym, schedule, risk, periods):
+    print(f"=== {label} ===")
     all_t = []
     for pname, pfrm, pto in PERIODS:
-        tr = run_multi(sym, pfrm, pto, schedule, spread)
+        tr = run_multi(sym, pfrm, pto, schedule)
         all_t += tr
         a = np.array(tr)*risk
         eq = np.cumsum(a); peak = np.maximum.accumulate(eq); dd = (eq-peak).min()
@@ -161,6 +124,6 @@ def report(label, sym, schedule, risk, periods, spread):
     pf = wins/losses if losses else 99
     print(f"TOTAL 25M: n={len(a)} pnl=${a.sum():.0f} win={w:.1f}% PF={pf:.2f} maxDD=${dd:.0f} ({len(a)/25:.1f} tr/mes)\n")
 
-report("EA MULTIHORARIO XAU: 04-06 BREAK48 | 16-18 EMACROSS | 22-24 BREAK48 (riesgo $20)", "XAUUSDm", SCHEDULE_XAU, 20, PERIODS, 0.26)
-report("EA MULTIHORARIO BTC: 16-18 RETEST48 | 18-20 VWAP (riesgo $300)", "BTCUSDm", SCHEDULE_BTC, 300, PERIODS, 18.0)
+report("EA MULTIHORARIO XAU: 04-06 BREAK48 | 16-18 EMACROSS | 22-24 BREAK48 (riesgo $20)", "XAUUSDm", SCHEDULE_XAU, 20, PERIODS)
+report("EA MULTIHORARIO BTC: 16-18 RETEST48 | 18-20 VWAP (riesgo $300)", "BTCUSDm", SCHEDULE_BTC, 300, PERIODS)
 mt5.shutdown()
