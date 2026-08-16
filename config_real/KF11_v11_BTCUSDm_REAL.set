@@ -1,0 +1,34 @@
+;=== KF11 v11 BTCUSDm — Config REAL (derivada del set demo que hizo +50% en 2 días) ===
+; Original: lote fijo 10.0 → REAL: riesgo 0.75% equity por trade, máx 2/día, breaker −1.5%/día
+; Validado: backtest 2025-2026 (2868 trades) — PERO 2026 negativo. Demo nueva: 5/5 ganadores.
+; USAR CON PRECAUCIÓN: KF11 en BTC está marcado como DESCARTADO en STRATEGIES_INDEX.md
+
+InpLotMode=0
+InpRiskPerTradeUSD=0.0
+InpRiskPctEquity=0.75
+InpMaxLotSize=1.0
+InpSLMultiplier=2.0
+InpTPMultiplier=4.0
+InpMaxOpenPositions=1
+InpMaxSpreadATR=0.15
+InpPartialTPEnable=false
+InpBreakevenTriggerATR=0.5
+InpBreakevenLockATR=0.1
+InpTrailBaseATR=0.4
+InpTrailTightenRate=0.35
+InpTrailMinATR=0.1
+InpTrailSpreadFloorMult=1.5
+InpDailyLossLimitEnable=true
+InpMaxDailyLossUSD=50.0
+InpVolTimeStopEnable=true
+InpVolCollapseRatio=0.50
+InpVolTimeStopMinBars=6
+InpVolTimeStopBarTF=0
+InpCooldownMinutes=2
+InpSessionFilterEnable=true
+InpStartHour=16
+InpStartMinute=0
+InpEndHour=19
+InpEndMinute=0
+InpPersistState=true
+InpMagicBase=104

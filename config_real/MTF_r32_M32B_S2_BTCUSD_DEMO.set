@@ -1,0 +1,20 @@
+;=== MTF r32 BTCUSD (M32B_S2) — Config demo (la que perdió −184 en 2 trades) ===
+; NO RECOMENDADA PARA REAL — M32B_S2 marcó 0/4 en live anterior, magic compartido 910002
+; Solo se guarda por registro histórico
+
+InpLotMode=0
+InpRiskPerTradeUSD=0.0
+InpRiskPctEquity=0.5
+InpMaxLotSize=2.0
+InpSLMultATR=80
+InpTPMult=2.5
+InpTTLBars=24
+InpMaxTradesPerDay=2
+InpDailyLossLimitPct=1.5
+InpCooldownMinutes=5
+InpSessionEnable=true
+InpStartHour=16
+InpEndHour=22
+InpATRPeriod=14
+InpEMA30Period=30
+InpMagicBase=910002
