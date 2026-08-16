@@ -1,0 +1,22 @@
+;=== Pure_Fractal_MOMEMA_04_06_XAU v1.0 — Set REAL validado walk-forward ===
+; Generado automáticamente desde test_momema_gestion.py
+; Periodo validado: jul-2024 → ago-2026 | PF 1.21 | +202% | MaxDD 43.6%
+; Gestión: 2×0.75%/día | TP 3R | SL 0.8×ATR | TTL 2h | breaker −1.5%/día
+
+InpLotMode=0
+InpRiskPerTradeUSD=0.0
+InpRiskPctEquity=0.75
+InpMaxLotSize=2.0
+InpSLMultATR=80
+InpTPMult=3.0
+InpTTLBars=24
+InpMaxTradesPerDay=2
+InpDailyLossLimitPct=1.5
+InpCooldownMinutes=5
+InpSessionEnable=true
+InpStartHour=4
+InpEndHour=6
+InpATRPeriod=14
+InpEMA30Period=30
+InpMagicBase=920001
+InpAccountType=0
