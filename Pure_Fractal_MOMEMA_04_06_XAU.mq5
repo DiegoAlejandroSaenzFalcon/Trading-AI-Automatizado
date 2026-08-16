@@ -14,9 +14,9 @@
 
 //--- Entrada principal
 input group "=== Riesgo y Tamaño (USD reales) ==="
-input ENUM_LOT_MODE    InpLotMode           = LOT_MODE_RISK;      // 0=riesgo USD fijo, 1=lote fijo
+input int              InpLotMode           = 2;                   // 0=fijo, 1=riesgo USD, 2=riesgo %
 input double           InpRiskPerTradeUSD   = 0.0;                 // Riesgo $ por trade (0 = usa %)
-input double           InpRiskPctEquity     = 0.75;                // % equity por trade (si RiskPerTradeUSD=0)
+input double           InpRiskPctEquity     = 0.75;                // % equity por trade
 input double           InpMaxLotSize        = 2.0;                 // Lote máximo
 input int              InpSLMultATR         = 80;                  // SL = ATR_M5 * esto / 100 (0.80)
 input double           InpTPMult            = 3.0;                 // TP = SL * esto (3.0 = 3R)
@@ -36,15 +36,15 @@ input int              InpEMA30Period       = 30;                  // EMA30 M5
 
 input group "=== Magic & Cuenta ==="
 input int              InpMagicBase         = 920001;              // Magic único MOMEMA 04-06 XAU
-input ENUM_ACCOUNT_TYPE  InpAccountType     = ACCT_AUTO;           // 0=AUTO, 1=Standard, 2=Cent, 3=Micro
+input int              InpAccountType       = 0;                   // 0=AUTO, 1=Standard, 2=Cent, 3=Micro
 
 //--- Globales
 CTrade         g_trade;
 CPositionInfo  g_pos;
 CSymbolInfo    g_sym;
-double         g_atrBuf[];
 int            g_atrHandle = INVALID_HANDLE;
 int            g_ema30Handle = INVALID_HANDLE;
+double         g_atrBuf[];
 datetime       g_lastBarTime = 0;
 int            g_todayTrades = 0;
 datetime       g_todayStart = 0;
@@ -87,6 +87,14 @@ void OnDeinit(const int reason)
 }
 
 //+------------------------------------------------------------------+
+//| Helper: extraer hora de datetime (0-23)                          |
+//+------------------------------------------------------------------+
+int GetHour(datetime t)
+{
+   return (int)(t % 86400) / 3600;
+}
+
+//+------------------------------------------------------------------+
 //| Expert tick function                                             |
 //+------------------------------------------------------------------+
 void OnTick()
@@ -99,7 +107,10 @@ void OnTick()
    g_lastBarTime = curBar;
 
    //--- Rollover diario
-   datetime dayStart = curBar - (TimeHour(curBar)*3600 + TimeMinute(curBar)*60 + TimeSeconds(curBar));
+   int h = GetHour(curBar);
+   int m = (int)(curBar % 3600) / 60;
+   int s = (int)(curBar % 60);
+   datetime dayStart = curBar - (h*3600 + m*60 + s);
    if(dayStart != g_todayStart)
    {
       g_todayStart = dayStart;
@@ -116,7 +127,7 @@ void OnTick()
       if(dd >= InpDailyLossLimitPct)
       {
          g_dailyBreaker = true;
-         Print("⚠ Circuit breaker activado: DD diario ", dd:2, "% >= ", InpDailyLossLimitPct, "%");
+         Print("Circuit breaker activado: DD diario ", DoubleToString(dd, 2), "% >= ", InpDailyLossLimitPct, "%");
       }
    }
 
@@ -126,8 +137,8 @@ void OnTick()
    //--- Filtro de sesión 04-06h
    if(InpSessionEnable)
    {
-      int h = TimeHour(curBar);
-      if(h < InpStartHour || h >= InpEndHour) return;
+      int hr = GetHour(curBar);
+      if(hr < InpStartHour || hr >= InpEndHour) return;
    }
 
    //--- Límite de trades diarios
@@ -135,7 +146,7 @@ void OnTick()
 
    //--- Señal MOMEMA en vela cerrada (shift 1)
    double c1 = iClose(_Symbol, PERIOD_M5, 1);
-   double e30 = iMA(_Symbol, PERIOD_M5, InpEMA30Period, 0, MODE_EMA, PRICE_CLOSE, 1);
+   double e30 = iMA(_Symbol, PERIOD_M5, InpEMA30Period, 1, MODE_EMA, PRICE_CLOSE);
    double hx = iHighest(_Symbol, PERIOD_M5, MODE_HIGH, 3, 2);  // máx 3 velas desde shift 2
    double ln = iLowest(_Symbol, PERIOD_M5, MODE_LOW, 3, 2);    // mín 3 velas desde shift 2
 
@@ -145,8 +156,9 @@ void OnTick()
 
    if(sig == 0) return;
 
-   //--- ATR actual (vela 1)
-   double atr = iATR(_Symbol, PERIOD_M5, InpATRPeriod, 1);
+   //--- ATR actual (vela 1) usando buffer
+   if(CopyBuffer(g_atrHandle, 0, 1, 1, g_atrBuf) <= 0) return;
+   double atr = g_atrBuf[0];
    if(atr <= 0) return;
 
    //--- Cálculo de lote y niveles
@@ -156,32 +168,30 @@ void OnTick()
 
    if(slDist <= 0 || tpDist <= 0) return;
 
-   double entryPrice = (sig == 1) ? g_sym.Ask() : g_sym.Bid();
-   double sl = (sig == 1) ? entryPrice - slDist : entryPrice + slDist;
-   double tp = (sig == 1) ? entryPrice + tpDist : entryPrice - tpDist;
+   double sl = (sig == 1) ? g_sym.Ask() - slDist : g_sym.Bid() + slDist;
+   double tp = (sig == 1) ? g_sym.Ask() + tpDist : g_sym.Bid() - tpDist;
 
-   double lot = riskUSD / (slDist * g_sym.TickValue());
+   double tickVal = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
+   double lot = riskUSD / (slDist * tickVal);
    lot = NormalizeDouble(lot, 2);
    if(lot < 0.01) lot = 0.01;
    if(lot > InpMaxLotSize) lot = InpMaxLotSize;
 
    //--- Verificar spread
-   if(g_sym.Spread() > 0)
-   {
-      double spreadPts = g_sym.Spread() * g_sym.Point();
-      if(spreadPts > atr * 0.35) return; // filtro spread > 0.35 ATR
-   }
+   int spread = (int)g_sym.Spread();
+   double spreadPts = spread * g_sym.Point();
+   if(spreadPts > atr * 0.35) return;
 
-   //--- Enviar orden
+   //--- Enviar orden (precio 0 = market)
    ENUM_ORDER_TYPE type = (sig == 1) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
-   if(g_trade.PositionOpen(_Symbol, type, lot, entryPrice, sl, tp, "MOMEMA 04-06"))
+   if(g_trade.PositionOpen(_Symbol, type, lot, 0, sl, tp, "MOMEMA 04-06"))
    {
       g_todayTrades++;
-      Print("✓ MOMEMA ", EnumToString(type), " | lot=", lot, " entry=", entryPrice, " SL=", sl, " TP=", tp);
+      Print("MOMEMA ", (type == ORDER_TYPE_BUY ? "BUY" : "SELL"), " | lot=", lot, " entry=market SL=", sl, " TP=", tp);
    }
    else
    {
-      Print("✗ Error abriendo: ", g_trade.ResultRetcode(), " ", g_trade.ResultComment());
+      Print("Error abriendo: ", g_trade.ResultRetcode(), " ", g_trade.ResultComment());
       if(g_trade.ResultRetcode() == 10014 || g_trade.ResultRetcode() == 10021)
          g_cooldownUntil = TimeTradeServer() + InpCooldownMinutes * 60;
    }
@@ -202,24 +212,15 @@ void ManageTTL()
       if(PositionSelectByTicket(ticket))
       {
          if(PositionGetInteger(POSITION_MAGIC) != InpMagicBase) continue;
-         int entryBar = (int)PositionGetInteger(POSITION_TIME) / PeriodSeconds(PERIOD_M5);
-         int curBar = iTime(_Symbol, PERIOD_M5, 0) / PeriodSeconds(PERIOD_M5);
+         datetime entryTime = (datetime)PositionGetInteger(POSITION_TIME);
+         int entryBar = (int)(entryTime / PeriodSeconds(PERIOD_M5));
+         int curBar = (int)(iTime(_Symbol, PERIOD_M5, 0) / PeriodSeconds(PERIOD_M5));
          if(InpTTLBars > 0 && curBar - entryBar >= InpTTLBars)
          {
             if(g_trade.PositionClose(ticket))
-               Print("⏰ TTL alcanzado: cerrada posición ", ticket);
+               Print("TTL alcanzado: cerrada posicion ", ticket);
          }
       }
    }
-}
-
-//+------------------------------------------------------------------+
-//| Helper: sesiones                                                 |
-//+------------------------------------------------------------------+
-bool IsInSession(datetime t)
-{
-   if(!InpSessionEnable) return true;
-   int h = TimeHour(t);
-   return (h >= InpStartHour && h < InpEndHour);
 }
 //+------------------------------------------------------------------+
