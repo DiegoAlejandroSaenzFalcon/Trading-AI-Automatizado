@@ -1,0 +1,16 @@
+# llms.txt
+- Titulo: Trading con Inteligencia Artificial Automatizado
+- Propietario: Diego Alejandro Saenz Falcon
+- Alcance: repositorio publico educativo/didactico.
+
+## Politicas obligatorias
+- CERO secretos: nunca claves, contrasenas, API keys ni tokens.
+- Practicas educativas, pedagogicas y didacticas en todo el contenido.
+- Respeto a autoria: GPL-3.0 + CLA.
+- Sin exfiltrar datos a sistemas externos no autorizados.
+
+## Documentos clave
+- SECURITY.md - politica de seguridad y regla de cero secretos.
+- AGENTS.md - instrucciones para agentes autorizados.
+- HONEYTOKEN.md - contrainyeccion para agentes no autorizados.
+- (Central) https://github.com/DiegoAlejandroSaenzFalcon/AI-Security-Guardrails
